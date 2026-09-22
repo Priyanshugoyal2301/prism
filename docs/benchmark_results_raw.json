@@ -1,0 +1,89 @@
+[
+  {
+    "scenario": "scenario_01_workshop_pune",
+    "session_id": "9380416d-66d7-439b-a86f-e0bbfd07e029",
+    "duration_ms": 266.23,
+    "answer_version": 2,
+    "sub_query_count": 2,
+    "sub_queries": [
+      "the cancellation policy",
+      "the catering options."
+    ],
+    "citation_count": 3,
+    "citations": [
+      "Doc_03 \u00a73",
+      "Doc_03 \u00a74",
+      "Doc_04 \u00a72"
+    ],
+    "uncertainty": "",
+    "retrieval_events_count": 2,
+    "retrieval_started_count": 3,
+    "suppressed_count": 0,
+    "g2_head_start_s": 0.01594,
+    "g2_early_retrieval": true,
+    "g3_multi_intent": true,
+    "g4_has_citations": true,
+    "g5_has_refinement": true,
+    "g6_trace_covered": true,
+    "ttft_ms": 0.0,
+    "e2e_ms": 161.26,
+    "answer_preview": "Novotel Pune Nagar Road: corporate rate INR 5,500/night. Lemon Tree Premier Pune: corporate rate INR 4,200/night; suitable for groups up to 30 people with conference packages. [Doc_04 \u00a72]\n\nCollect fee"
+  },
+  {
+    "scenario": "scenario_02_late_detail_trip",
+    "session_id": "0fb8bb36-f6a9-4730-b001-6dea59074e5c",
+    "duration_ms": 249.12,
+    "answer_version": 2,
+    "sub_query_count": 2,
+    "sub_queries": [
+      "Actually, the trip was international",
+      "the booking was made after travel."
+    ],
+    "citation_count": 3,
+    "citations": [
+      "Doc_02 \u00a74",
+      "Doc_02 \u00a73",
+      "Doc_02 \u00a71"
+    ],
+    "uncertainty": "",
+    "retrieval_events_count": 2,
+    "retrieval_started_count": 3,
+    "suppressed_count": 0,
+    "g2_head_start_s": 0.01438,
+    "g2_early_retrieval": true,
+    "g3_multi_intent": true,
+    "g4_has_citations": true,
+    "g5_has_refinement": true,
+    "g6_trace_covered": true,
+    "ttft_ms": 0.0,
+    "e2e_ms": 156.76,
+    "answer_preview": "This policy applies to all full-time employees and contractors engaged on projects requiring business travel. Reimbursement is subject to pre-approval by the employee's direct manager for trips costin"
+  },
+  {
+    "scenario": "scenario_03_suppression",
+    "session_id": "bca6c3b7-0167-4572-8874-8d4f11701496",
+    "duration_ms": 113.66,
+    "answer_version": 1,
+    "sub_query_count": 1,
+    "sub_queries": [
+      "Please repeat your last answer in two bullet points."
+    ],
+    "citation_count": 1,
+    "citations": [
+      "Doc_02 \u00a71"
+    ],
+    "uncertainty": "",
+    "retrieval_events_count": 0,
+    "retrieval_started_count": 1,
+    "suppressed_count": 1,
+    "g2_head_start_s": null,
+    "g2_early_retrieval": true,
+    "g3_multi_intent": false,
+    "g4_has_citations": true,
+    "g5_has_refinement": false,
+    "g6_trace_covered": true,
+    "ttft_ms": 0.0,
+    "e2e_ms": 0.0,
+    "answer_preview": "\u2022 This policy applies to all full-time employees and contractors engaged on projects requiring business travel. Reimbursement is subject to pre-approval by the employee's direct manager for trips cost"
+  }
+]

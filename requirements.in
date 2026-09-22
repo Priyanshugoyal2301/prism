@@ -1,0 +1,30 @@
+# requirements.in — Direct dependencies for Streaming Live RAG Engine
+# Run: pip-compile requirements.in -o requirements.lock
+
+# Web framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+websockets>=12.0
+
+# Data validation
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# Retrieval
+rank-bm25>=0.2.2
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+
+# HTTP client (for LLM API)
+httpx>=0.27.0
+
+# Logging / telemetry
+structlog>=24.1.0
+
+# Type hints (Python 3.11 compat)
+typing-extensions>=4.11.0
+
+# Security scanning (dev only)
+# pip-audit
+# gitleaks (external binary, not pip)

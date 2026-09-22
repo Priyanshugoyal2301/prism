@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streaming Live RAG — Demo Console</title>
+  <meta name="description" content="Samsung PRISM GenAI Hackathon 3.0 Theme 4: Streaming Live RAG Engine Demo Console">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a12;
+      --bg-card: #0f0f1e;
+      --bg-hover: #14142a;
+      --border: #1e1e3a;
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #06b6d4;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --text: #e0e0f0;
+      --text-muted: #6b7280;
+      --text-dim: #9ca3af;
+      --font: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Consolas', monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 24px;
+      background: linear-gradient(90deg, #0a0a12 0%, #0f0f1e 100%);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text h1 { font-size: 15px; font-weight: 700; color: var(--text); }
+    .logo-text p { font-size: 11px; color: var(--text-muted); }
+    header .spacer { flex: 1; }
+    .status-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      font-size: 12px; color: var(--text-dim);
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s;
+    }
+    .status-dot.connected { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.error { background: var(--danger); }
+
+    /* ── Layout ── */
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      grid-template-rows: auto 1fr;
+      gap: 0;
+      height: calc(100vh - 65px);
+    }
+    .sidebar { background: var(--bg-card); border-right: 1px solid var(--border); overflow-y: auto; }
+    .sidebar-right { background: var(--bg-card); border-left: 1px solid var(--border); overflow-y: auto; }
+    .main-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Section headers ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .section-header .badge {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; color: var(--text-dim);
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .session-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .session-row label { font-size: 11px; color: var(--text-muted); min-width: 60px; }
+    .session-row input {
+      flex: 1; padding: 6px 10px; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--mono); font-size: 11px;
+    }
+    .scenario-select {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px; margin-bottom: 10px;
+    }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; padding: 8px 12px; border-radius: 8px; border: none;
+      font-family: var(--font); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; min-width: 80px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #5254d8; transform: translateY(-1px); }
+    .btn-ghost { background: var(--bg); border: 1px solid var(--border); color: var(--text-dim); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+    .btn-danger { background: transparent; border: 1px solid #3a1010; color: var(--danger); }
+    .btn-danger:hover { background: #1a0808; }
+
+    /* ── Transcript area ── */
+    .transcript-area {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    textarea {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--mono); font-size: 12px;
+      resize: vertical; min-height: 80px;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Timeline ── */
+    .timeline { padding: 12px; overflow-y: auto; max-height: 300px; }
+    .timeline-event {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      margin-bottom: 6px; cursor: default;
+      transition: background 0.2s;
+      animation: fadeIn 0.3s ease;
+    }
+    .timeline-event:hover { background: var(--bg-hover); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .event-icon {
+      width: 24px; height: 24px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; margin-top: 1px;
+    }
+    .event-chunk { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .event-retrieve { background: rgba(6,182,212,0.15); color: var(--accent-3); }
+    .event-suppress { background: rgba(245,158,11,0.15); color: var(--warn); }
+    .event-answer { background: rgba(16,185,129,0.15); color: var(--success); }
+    .event-error { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .event-info { background: rgba(107,114,128,0.15); color: var(--text-muted); }
+    .event-body { flex: 1; min-width: 0; }
+    .event-type { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+    .event-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; word-break: break-word; }
+    .event-time { font-family: var(--mono); font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* ── Main content ── */
+    .answer-panel {
+      flex: 1; overflow-y: auto;
+      padding: 20px 24px;
+    }
+    .answer-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; color: var(--text-muted); gap: 12px;
+    }
+    .answer-empty .big-icon { font-size: 48px; opacity: 0.3; }
+    .answer-empty p { font-size: 13px; }
+    .answer-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+      animation: fadeIn 0.4s ease;
+    }
+    .answer-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .version-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--accent); font-weight: 600;
+      background: rgba(99,102,241,0.1); padding: 3px 10px;
+      border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);
+    }
+    .answer-text {
+      font-size: 14px; line-height: 1.7; color: var(--text);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .claim-block {
+      background: var(--bg); border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0; padding: 10px 14px; margin-bottom: 10px;
+    }
+    .claim-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+    .claim-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .citation-tag {
+      font-family: var(--mono); font-size: 10px;
+      background: rgba(99,102,241,0.1); color: var(--accent);
+      padding: 2px 8px; border-radius: 10px;
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+    .uncertain-tag {
+      font-size: 10px; font-weight: 600;
+      background: rgba(245,158,11,0.1); color: var(--warn);
+      padding: 2px 8px; border-radius: 10px;
+      border: 1px solid rgba(245,158,11,0.2);
+    }
+    .uncertainty-block {
+      background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; padding: 10px 14px; margin-top: 10px;
+      font-size: 12px; color: var(--warn);
+    }
+
+    /* ── Diff view ── */
+    .diff-section { margin-top: 16px; }
+    .diff-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
+    .diff-op {
+      border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;
+      font-size: 12px; line-height: 1.5;
+    }
+    .diff-retain { background: rgba(107,114,128,0.1); border-left: 3px solid var(--text-muted); }
+    .diff-add { background: rgba(16,185,129,0.1); border-left: 3px solid var(--success); }
+    .diff-update { background: rgba(6,182,212,0.1); border-left: 3px solid var(--accent-3); }
+    .diff-op-label { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px; }
+
+    /* ── Sub-queries panel ── */
+    .sub-queries { padding: 12px; }
+    .sub-query-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+      transition: border-color 0.2s;
+    }
+    .sub-query-card.running { border-color: var(--accent-3); }
+    .sub-query-card.done { border-color: var(--success); }
+    .sub-query-id { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+    .sub-query-text { font-size: 12px; color: var(--text); margin-top: 4px; }
+    .sub-query-hits { font-size: 11px; color: var(--accent-3); margin-top: 4px; }
+    .spinner {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(99,102,241,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Metrics ── */
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+    .metric-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+    }
+    .metric-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
+    .metric-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Controller pill ── */
+    .ctrl-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 12px;
+      font-size: 11px; font-weight: 600;
+    }
+    .ctrl-RETRIEVE { background: rgba(6,182,212,0.15); color: var(--accent-3); }
+    .ctrl-WAIT { background: rgba(107,114,128,0.15); color: var(--text-muted); }
+    .ctrl-NO_RETRIEVAL { background: rgba(245,158,11,0.15); color: var(--warn); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2a2a4a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      .app { grid-template-columns: 280px 1fr 280px; }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
+      .sidebar, .sidebar-right { max-height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">
+      <h1>Streaming Live RAG Engine</h1>
+      <p>Samsung PRISM GenAI Hackathon 3.0 · Theme 4</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="status-pill" id="ws-status-pill">
+    <div class="status-dot" id="ws-dot"></div>
+    <span id="ws-status-text">Disconnected</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- ── Left Sidebar: Controls + Timeline ── -->
+  <div class="sidebar" id="left-sidebar">
+    <div class="section-header">
+      Controls
+      <span class="badge" id="session-badge">No session</span>
+    </div>
+    <div class="input-area">
+      <div class="session-row">
+        <label>Session</label>
+        <input type="text" id="session-id-input" placeholder="auto-generated" readonly>
+      </div>
+      <select class="scenario-select" id="scenario-select">
+        <option value="">-- Select scenario --</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-replay" onclick="startReplay()">▶ Replay</button>
+        <button class="btn btn-ghost" id="btn-connect" onclick="connectWS()">WS Connect</button>
+        <button class="btn btn-danger" onclick="resetSession()">Reset</button>
+      </div>
+    </div>
+
+    <div class="transcript-area">
+      <div class="section-header" style="border:none;padding:0 0 8px 0;">Live Transcript</div>
+      <textarea id="transcript-input" placeholder="Type or paste utterance chunks here..." rows="4"></textarea>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-ghost" onclick="sendChunk(false)" style="flex:2">Send Chunk</button>
+        <button class="btn btn-primary" onclick="sendChunk(true)" style="flex:2">Send Final</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      Pipeline Timeline
+      <span class="badge" id="timeline-count">0 events</span>
+    </div>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <!-- ── Main Panel: Answer ── -->
+  <div class="main-panel">
+    <div class="section-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border);">
+      Answer — Versioned & Cited
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="answer-version-badge" class="version-badge" style="display:none;">v1</span>
+        <span id="answer-loading" style="display:none;"><div class="spinner"></div></span>
+      </div>
+    </div>
+
+    <div class="answer-panel" id="answer-panel">
+      <div class="answer-empty" id="answer-empty">
+        <div class="big-icon">🎙️</div>
+        <p>Select a scenario and click <strong>Replay</strong>, or connect via WebSocket and send transcript chunks.</p>
+        <p style="font-size:12px;color:var(--text-muted)">The answer will appear here with citations and confidence scores.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right Sidebar: Sub-queries + Metrics ── -->
+  <div class="sidebar-right" id="right-sidebar">
+    <div class="section-header">
+      Sub-queries
+      <span class="badge" id="sq-count">0</span>
+    </div>
+    <div class="sub-queries" id="sub-queries-panel"></div>
+
+    <div class="section-header">
+      System Metrics
+    </div>
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card"><div class="metric-value" id="m-turns">0</div><div class="metric-label">Total Turns</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-retrievals">0</div><div class="metric-label">Retrievals</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-suppressed">0</div><div class="metric-label">Suppressed</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-ttft">—</div><div class="metric-label">Avg TTFT (ms)</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-e2e">—</div><div class="metric-label">Avg E2E (ms)</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-cache">—</div><div class="metric-label">Cache Hit Rate</div></div>
+    </div>
+
+    <div class="section-header">Citations Pool</div>
+    <div id="citations-panel" style="padding:12px;"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let ws = null;
+let sessionId = null;
+let eventCount = 0;
+let subQueries = {};
+let currentVersion = 0;
+let apiBase = window.location.origin;
+
+// ── Init ─────────────────────────────────────────────────────────────────
+window.onload = async () => {
+  sessionId = crypto.randomUUID();
+  document.getElementById('session-id-input').value = sessionId;
+  document.getElementById('session-badge').textContent = sessionId.slice(0, 8) + '...';
+  await loadScenarios();
+  await refreshMetrics();
+  setInterval(refreshMetrics, 5000);
+};
+
+async function loadScenarios() {
+  try {
+    const r = await fetch(`${apiBase}/scenarios`);
+    const data = await r.json();
+    const sel = document.getElementById('scenario-select');
+    data.scenarios.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s.replace(/_/g, ' ');
+      sel.appendChild(opt);
+    });
+  } catch (e) { console.warn('Could not load scenarios:', e); }
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────
+function connectWS() {
+  if (ws) ws.close();
+  const wsUrl = `${apiBase.replace('http', 'ws')}/ws/stream/${sessionId}`;
+  setStatus('connecting', 'Connecting...');
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    setStatus('connected', 'Live');
+    addEvent('info', 'WS', 'WebSocket connected');
+  };
+  ws.onclose = () => {
+    setStatus('disconnected', 'Disconnected');
+    addEvent('info', 'WS', 'Connection closed');
+  };
+  ws.onerror = () => {
+    setStatus('error', 'Error');
+    addEvent('error', 'WS', 'Connection error');
+  };
+  ws.onmessage = (ev) => {
+    try { handleServerMessage(JSON.parse(ev.data)); }
+    catch (e) { console.error('Parse error:', e); }
+  };
+}
+
+function handleServerMessage(msg) {
+  const { type, payload } = msg;
+  if (type === 'controller_decision') {
+    const cls = `ctrl-${payload.decision}`;
+    addEvent(
+      payload.decision === 'RETRIEVE' ? 'retrieve' : (payload.decision === 'NO_RETRIEVAL' ? 'suppress' : 'info'),
+      payload.decision,
+      `${payload.reason} (conf: ${(payload.confidence*100).toFixed(0)}%)`,
+    );
+  } else if (type === 'decomposition') {
+    payload.sub_queries.forEach(sq => addSubQuery(sq));
+    addEvent('info', 'Decompose', `${payload.sub_queries.length} sub-queries ${payload.is_refinement ? '(refinement)' : ''}`);
+  } else if (type === 'retrieval_started') {
+    updateSubQueryStatus(payload.sub_query_id, 'running');
+    addEvent('retrieve', 'Retrieval', `[${payload.sub_query_id}] ${payload.query.slice(0,40)}...`);
+  } else if (type === 'answer_complete') {
+    renderAnswer(payload);
+    updateSubQueriesFromAnswer(payload.claims || []);
+    addEvent('answer', `Answer v${payload.version}`, `${(payload.claims||[]).length} claims, ${(payload.citations||[]).length} citations`);
+    document.getElementById('answer-loading').style.display = 'none';
+  } else if (type === 'suppressed_retrieval') {
+    addEvent('suppress', 'Suppressed', payload.reason);
+  } else if (type === 'answer_diff') {
+    renderDiff(payload);
+    addEvent('answer', 'Delta Patch', payload.summary);
+  } else if (type === 'turn_record') {
+    document.getElementById('answer-loading').style.display = 'none';
+  }
+}
+
+// ── Replay ────────────────────────────────────────────────────────────────
+async function startReplay() {
+  const scenario = document.getElementById('scenario-select').value;
+  if (!scenario) { alert('Select a scenario first.'); return; }
+
+  resetUI();
+  document.getElementById('answer-loading').style.display = 'inline-block';
+  addEvent('info', 'Replay', `Starting scenario: ${scenario}`);
+
+  try {
+    const r = await fetch(`${apiBase}/replay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_name: scenario, session_id: sessionId, speed_multiplier: 100 })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    processReplayResult(data);
+  } catch (e) {
+    addEvent('error', 'Replay Error', String(e));
+    document.getElementById('answer-loading').style.display = 'none';
+  }
+}
+
+function processReplayResult(data) {
+  const tr = data.turn_record;
+  const tel = data.telemetry_events || [];
+
+  // Process telemetry events in order
+  tel.forEach(ev => {
+    const et = ev.event_type;
+    if (et === 'chunk_received') addEvent('chunk', 'Chunk', ev.payload.text || '');
+    else if (et === 'controller_decision') {
+      addEvent(
+        ev.payload.decision === 'RETRIEVE' ? 'retrieve' : (ev.payload.decision === 'NO_RETRIEVAL' ? 'suppress' : 'info'),
+        ev.payload.decision, ev.payload.reason
+      );
+    } else if (et === 'decomposition') {
+      (ev.payload.sub_queries || []).forEach((t, i) =>
+        addSubQuery({ id: `sq_${i}`, text: t })
+      );
+    } else if (et === 'retrieval_started') {
+      addEvent('retrieve', 'Retrieval', ev.payload.query || '');
+    } else if (et === 'synthesis_first_token') {
+      addEvent('answer', 'First Token', `TTFT: ${ev.payload.ttft_ms}ms`);
+    } else if (et === 'suppressed_retrieval') {
+      addEvent('suppress', 'Suppressed', ev.payload.reason || '');
+    } else if (et === 'answer_version_bump') {
+      addEvent('answer', `v${ev.payload.answer_version}`, `E2E: ${ev.payload.e2e_ms}ms`);
+    }
+  });
+
+  // Render final answer
+  if (tr.answer) {
+    renderAnswerFromTurnRecord(tr);
+  }
+  document.getElementById('answer-loading').style.display = 'none';
+  refreshMetrics();
+}
+
+// ── Live typing ───────────────────────────────────────────────────────────
+async function sendChunk(isFinal) {
+  const text = document.getElementById('transcript-input').value.trim();
+  if (!text) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    connectWS();
+    setTimeout(() => sendChunk(isFinal), 500);
+    return;
+  }
+  ws.send(JSON.stringify({
+    type: 'chunk',
+    chunk_id: `c_${Date.now()}`,
+    text,
+    t_start_s: Date.now() / 1000,
+    is_final: isFinal
+  }));
+  addEvent('chunk', 'Sent', text.slice(0, 50) + (text.length > 50 ? '...' : ''));
+  if (isFinal) {
+    document.getElementById('transcript-input').value = '';
+    document.getElementById('answer-loading').style.display = 'inline-block';
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function clearAnswerCards() {
+  // Remove all answer-card, diff-section children but keep answer-empty
+  const panel = document.getElementById('answer-panel');
+  Array.from(panel.children).forEach(c => {
+    if (!c.id || c.id !== 'answer-empty') panel.removeChild(c);
+  });
+}
+
+function renderAnswer(payload) {
+  const claims = payload.claims || [];
+  const citations = payload.citations || [];
+  const version = payload.version || 1;
+  const uncertainty = payload.uncertainty || '';
+
+  const emptyEl = document.getElementById('answer-empty');
+  if (emptyEl) emptyEl.style.display = 'none';
+  const badge = document.getElementById('answer-version-badge');
+  badge.textContent = `v${version}`;
+  badge.style.display = 'flex';
+  currentVersion = version;
+
+  const panel = document.getElementById('answer-panel');
+  clearAnswerCards();
+  const card = document.createElement('div');
+  card.className = 'answer-card';
+  card.id = `answer-v${version}`;
+
+  let html = `<div class="answer-card-header">
+    <div style="font-size:13px;font-weight:600;color:var(--text)">Answer Version ${version}</div>
+  </div>`;
+
+  if (claims.length) {
+    claims.forEach(c => {
+      const cits = (c.citations || []).filter(ci => ci.verified !== false);
+      const citTags = cits.map(ci => `<span class="citation-tag">${ci.chunk_id || ci}</span>`).join('');
+      const uncert = c.is_uncertain ? '<span class="uncertain-tag">&#9888; Uncertain</span>' : '';
+      html += `<div class="claim-block">
+        <div class="claim-text">${escHtml(c.text)}</div>
+        <div class="claim-meta">${citTags}${uncert}</div>
+      </div>`;
+    });
+  } else if (payload.answer) {
+    html += `<div class="answer-text">${escHtml(payload.answer)}</div>`;
+  }
+
+  if (uncertainty) {
+    html += `<div class="uncertainty-block">&#9888; ${escHtml(uncertainty)}</div>`;
+  }
+
+  if (citations.length) renderCitationPool(citations);
+
+  card.innerHTML = html;
+  panel.appendChild(card);
+}
+
+function renderAnswerFromTurnRecord(tr) {
+  const emptyEl = document.getElementById('answer-empty');
+  if (emptyEl) emptyEl.style.display = 'none';
+  const badge = document.getElementById('answer-version-badge');
+  badge.textContent = `v${tr.answer_version}`;
+  badge.style.display = 'flex';
+
+  const panel = document.getElementById('answer-panel');
+  clearAnswerCards();
+  const card = document.createElement('div');
+  card.className = 'answer-card';
+
+  let html = `<div class="answer-card-header">
+    <div style="font-size:13px;font-weight:600;color:var(--text)">Answer Version ${tr.answer_version}</div>
+  </div>
+  <div class="answer-text">${escHtml(tr.answer || '(no answer)')}</div>`;
+
+  if (tr.citations && tr.citations.length) {
+    html += `<div class="claim-meta" style="margin-top:12px;">
+      ${tr.citations.map(c => `<span class="citation-tag">${escHtml(c)}</span>`).join('')}
+    </div>`;
+    renderCitationPool(tr.citations);
+  }
+
+  if (tr.uncertainty) {
+    html += `<div class="uncertainty-block" style="margin-top:10px;">&#9888; ${escHtml(tr.uncertainty)}</div>`;
+  }
+
+  if (tr.sub_queries && tr.sub_queries.length) {
+    tr.sub_queries.forEach((sq, i) =>
+      addSubQuery({ id: `sq_${i}`, text: sq })
+    );
+  }
+
+  card.innerHTML = html;
+  panel.appendChild(card);
+}
+
+function renderDiff(diff) {
+  const panel = document.getElementById('answer-panel');
+  const diffCard = document.createElement('div');
+  diffCard.className = 'diff-section';
+  let html = `<h4>Delta Patch: v${diff.version_from} → v${diff.version_to}</h4>`;
+  (diff.ops || []).forEach(op => {
+    const cls = `diff-${op.op.toLowerCase()}`;
+    html += `<div class="diff-op ${cls}">
+      <div class="diff-op-label" style="color:${op.op==='RETAIN'?'var(--text-muted)':op.op==='ADD'?'var(--success)':'var(--accent-3)'}">${op.op}</div>
+      ${escHtml(op.text_after || op.text_before || '')}
+    </div>`;
+  });
+  diffCard.innerHTML = html;
+  panel.appendChild(diffCard);
+}
+
+function renderCitationPool(citations) {
+  const pool = document.getElementById('citations-panel');
+  pool.innerHTML = '';
+  citations.forEach(cit => {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:6px;';
+    div.innerHTML = `<span class="citation-tag">${escHtml(cit)}</span>`;
+    pool.appendChild(div);
+  });
+}
+
+// ── Sub-queries ───────────────────────────────────────────────────────────
+function addSubQuery(sq) {
+  subQueries[sq.id] = sq;
+  renderSubQueries();
+}
+function updateSubQueryStatus(id, status) {
+  if (subQueries[id]) subQueries[id].status = status;
+  renderSubQueries();
+}
+function updateSubQueriesFromAnswer(claims) {
+  Object.keys(subQueries).forEach(id => subQueries[id].status = 'done');
+  renderSubQueries();
+}
+function renderSubQueries() {
+  const panel = document.getElementById('sub-queries-panel');
+  panel.innerHTML = '';
+  const sqs = Object.values(subQueries);
+  document.getElementById('sq-count').textContent = sqs.length;
+  if (!sqs.length) {
+    panel.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;">No sub-queries yet</div>';
+    return;
+  }
+  sqs.forEach(sq => {
+    const status = sq.status || 'pending';
+    const card = document.createElement('div');
+    card.className = `sub-query-card ${status}`;
+    card.innerHTML = `<div class="sub-query-id">${escHtml(sq.id)} ${status==='running'?'<div class="spinner" style="display:inline-block"></div>':''}</div>
+      <div class="sub-query-text">${escHtml(sq.text)}</div>
+      ${sq.hits !== undefined ? `<div class="sub-query-hits">${sq.hits} hits retrieved</div>` : ''}`;
+    panel.appendChild(card);
+  });
+}
+
+// ── Timeline ──────────────────────────────────────────────────────────────
+function addEvent(type, title, detail) {
+  eventCount++;
+  const tl = document.getElementById('timeline');
+  document.getElementById('timeline-count').textContent = `${eventCount} events`;
+
+  const icons = {
+    chunk: '📝', retrieve: '🔍', suppress: '⚡', answer: '✅', error: '❌', info: 'ℹ️'
+  };
+  const clsMap = {
+    chunk: 'event-chunk', retrieve: 'event-retrieve',
+    suppress: 'event-suppress', answer: 'event-answer',
+    error: 'event-error', info: 'event-info'
+  };
+  const now = new Date().toLocaleTimeString('en', { hour12: false });
+  const ev = document.createElement('div');
+  ev.className = 'timeline-event';
+  ev.innerHTML = `
+    <div class="event-icon ${clsMap[type]||'event-info'}">${icons[type]||'ℹ️'}</div>
+    <div class="event-body">
+      <div class="event-type">${escHtml(title)}</div>
+      <div class="event-detail">${escHtml(detail)}</div>
+    </div>
+    <div class="event-time">${now}</div>`;
+  tl.insertBefore(ev, tl.firstChild);
+  if (tl.children.length > 50) tl.removeChild(tl.lastChild);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  const dot = document.getElementById('ws-dot');
+  const label = document.getElementById('ws-status-text');
+  dot.className = `status-dot ${state === 'connected' ? 'connected' : state === 'error' ? 'error' : ''}`;
+  label.textContent = text;
+}
+
+async function refreshMetrics() {
+  try {
+    const r = await fetch(`${apiBase}/metrics`);
+    const d = await r.json();
+    document.getElementById('m-turns').textContent = d.total_turns || 0;
+    document.getElementById('m-retrievals').textContent = d.total_retrievals || 0;
+    document.getElementById('m-suppressed').textContent = d.suppressed_retrievals || 0;
+    document.getElementById('m-ttft').textContent = d.avg_ttft_ms > 0 ? `${d.avg_ttft_ms}` : '—';
+    document.getElementById('m-e2e').textContent = d.avg_e2e_ms > 0 ? `${d.avg_e2e_ms}` : '—';
+    document.getElementById('m-cache').textContent = d.cache_hit_rate > 0 ? `${(d.cache_hit_rate*100).toFixed(1)}%` : '—';
+  } catch (e) {}
+}
+
+async function resetSession() {
+  try {
+    await fetch(`${apiBase}/session/${sessionId}/reset`, { method: 'POST' });
+    resetUI();
+    addEvent('info', 'Reset', 'Session cleared');
+  } catch (e) {}
+}
+
+function resetUI() {
+  document.getElementById('timeline').innerHTML = '';
+  document.getElementById('sub-queries-panel').innerHTML = '';
+  document.getElementById('citations-panel').innerHTML = '';
+  // Clear answer cards but keep the answer-empty placeholder
+  clearAnswerCards();
+  const emptyEl = document.getElementById('answer-empty');
+  if (emptyEl) emptyEl.style.display = 'flex';
+  document.getElementById('answer-version-badge').style.display = 'none';
+  document.getElementById('answer-loading').style.display = 'none';
+  subQueries = {}; eventCount = 0;
+  document.getElementById('timeline-count').textContent = '0 events';
+  document.getElementById('sq-count').textContent = '0';
+}
+
+function escHtml(text) {
+  if (!text) return '';
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

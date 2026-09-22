@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  rag-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prism-rag-engine
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount corpus read-only (do not commit corpus files)
+      - ./data/corpus:/app/data/corpus:ro
+      # Writable log volume only
+      - rag-logs:/app/logs
+    environment:
+      # LLM (leave blank to run in rules-only mode — G1 requirement)
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com/v1}
+      - LLM_CONTROLLER_MODEL=${LLM_CONTROLLER_MODEL:-gpt-4o-mini}
+      - LLM_SYNTHESIZER_MODEL=${LLM_SYNTHESIZER_MODEL:-gpt-4o}
+      # Corpus
+      - CORPUS_PATH=/app/data/corpus
+      # Auth (open for evaluation)
+      - AUTH_MODE=open
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_TEXT=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  rag-logs:
+    driver: local

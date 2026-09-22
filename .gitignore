@@ -1,0 +1,44 @@
+# .gitignore — Streaming Live RAG Engine
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.env.local
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Model weights cached locally (re-downloaded at build time)
+app/.model_cache/
+*.bin
+*.safetensors
+*.ot
+faiss_index.*
+bm25_index.*
+
+# Data — corpus is mounted, never committed
+data/corpus/*.json
+data/corpus/*.jsonl
+data/corpus/*.pdf
+data/corpus/*.txt
+
+# Logs and telemetry output
+logs/
+*.jsonl
+!bench/scenarios/*.jsonl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
